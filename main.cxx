@@ -31,7 +31,10 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-
+//灯光
+glm::vec3 lightPos(1.0f,0.0f,0.0f);
+glm::vec3 lightColor(1.0f,1.0f,1.0f);
+glm::vec3 objectColor(1.0f,0.5f,0.31f);
 //camera实例
 Camera camera(glm::vec3(0.0f,0.0f,3.0f));
 bool firstMouse = true;
@@ -83,25 +86,34 @@ int main(int argc, char *argv[])
 
     //shader的实例化glsl
     Shader ourShader("F:\\script\\QtProject\\OpenGLTest001\\vertex.vs", "F:\\script\\QtProject\\OpenGLTest001\\fragment.fs");
+    //灯光
+    Shader lightShader("F:\\script\\QtProject\\OpenGLTest001\\vertex.vs", "F:\\script\\QtProject\\OpenGLTest001\\light.fs");
     // ------------------------------------------------------------------
 
-    GLuint VBO, VAO,EBO;
+    GLuint VBO, VAO,EBO,lightVAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);  //生成顶点缓冲管理对象
     //glGenBuffers(2,&EBO);
 
     glBindVertexArray(VAO); //绑定VAO
-
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);  //绑定到EBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO); //把新创建的VBO绑定到GL_ARRAY_BUFFER
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
-    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);   //以线框显示
+    //glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);   //以线框显示
     // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-
     glBindVertexArray(0); // 解除绑定的VAO
+
+    //灯光lightVAO
+    glGenVertexArrays(1,&lightVAO);
+    glBindVertexArray(lightVAO);
+    glBindBuffer(GL_ARRAY_BUFFER,VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,5*sizeof(GLfloat),(GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
 //    // 位置属性
 //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 //    glEnableVertexAttribArray(0);
@@ -143,45 +155,44 @@ int main(int argc, char *argv[])
 //        glActiveTexture(GL_TEXTURE1);
 //        glBindTexture(GL_TEXTURE_2D, texture2);
 
-        // activate shader
-        ourShader.use();
-
         //必须创建的对角矩阵
         glm::mat4 model=glm::mat4(1.0f);
         glm::mat4 view=glm::mat4(1.0f);
         glm::mat4 projection=glm::mat4(1.0f);
-
         //创建透视投影
         view=camera.GetViewMatrix();
         projection=glm::perspective(camera.Zoom,(GLfloat)SCR_WIDTH/(GLfloat)SCR_HEIGHT,0.1f,1000.0f);
+        //灯光
+        lightShader.use();
+        model=glm::translate(model,lightPos);
+        model=glm::scale(model,glm::vec3(0.1f));
+        lightShader.setMat4("model",model);
+        lightShader.setMat4("view",view);
+        lightShader.setMat4("projection",projection);
 
+        ourShader.use();
         //GLint modelLoc=glGetUniformLocation(ourShader.ID,"model");  //查找到着色器的变量
         //glUniformMatrix4fv(modelLoc,1,GL_FALSE,glm::value_ptr(model));
-
         ourShader.setMat4("view",view);
         ourShader.setMat4("projection",projection);
-
-        //颜色变化
-        GLfloat greenValue=(sin(currentFrame)/2)+0.5;
-        glm::vec4 value=glm::vec4(0.8f, 0.6f, 0.3f,1.0f);
-        ourShader.setVec4("ourColor",value);
-
+        ourShader.setVec3("objectColor",objectColor);
+        ourShader.setVec3("lightColor",lightColor);
 
         // pass projection matrix to shader (note that in this case it could change every frame)
         //glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         //ourShader.setMat4("projection", projection);
-
-        // camera/view transformation
-        //glm::mat4 view = glm::lookAt(cameraPos,cameraPos+cameraFront,cameraUp);
-        //ourShader.setMat4("view", view);
-
+        //灯光VAO
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES,0,36);
+        glBindVertexArray(0);
         // render boxes
         glBindVertexArray(VAO);
         //绘制10个box
-        for(GLint i=0;i<10;i++)
+        for(GLint i=0;i<2;i++)
         {
             //旋转
             GLfloat angle=20.0f * i;
+            glm::mat4 model=glm::mat4(1.0f);
             model=glm::rotate(model,angle,glm::vec3(0.0f,0.3f,0.0f));
             //位置
             model = glm::translate(model, cubePositions[i]);
@@ -192,19 +203,7 @@ int main(int argc, char *argv[])
 
         //glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);     //使用顶点索引绘制图元
         glBindVertexArray(0);
-        /*
-        for (unsigned int i = 0; i < 10; i++)
-        {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model=glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            //ourShader.setMat4("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-*/
         glfwSwapBuffers(window);
         glfwPollEvents();   //检测并调用事件
     }
@@ -212,6 +211,7 @@ int main(int argc, char *argv[])
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1,&lightVAO);
     glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.

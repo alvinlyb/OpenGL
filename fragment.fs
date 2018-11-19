@@ -1,8 +1,13 @@
 #version 330 core
-uniform vec4 ourColor;
 out vec4 color;
+
+uniform vec3 objectColor;
+uniform vec3 lightColor;
 
 void main()
 {
-    color = ourColor;
+    float ambientStrength=0.1f;
+    vec3 ambient=ambientStrength*lightColor;
+    color = vec4(ambient * objectColor , 1.0f);
 }
+
