@@ -13,7 +13,7 @@
 #include "testdata.hxx"
 
 #define IMPORT_OPENGL_LOADER_GLAD
-#define IMPORT_LOADER_SDL
+#define IMPORT_LOADER_GLFW
 #include "import_opengl3.hxx"
 
 //#define STB_IMAGE_IMPLEMENTATION
@@ -22,22 +22,7 @@
 //#include <SOIL2/SOIL2.h>
 //#pragma comment(lib, "D:\\cxxlib\\soil2\\lib\\soil2d.lib")
 //#include <boost/format.hpp>
-//#define NO_SDL_GLEXT
-//#if ( defined( _MSCVER ) || defined( _MSC_VER ) ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ )
-//    #include <SDL.h>
-//    #include <SDL_opengl.h>
-//#else
-//    #include <SDL2/SDL.h>
-//    #include <SDL2/SDL_opengl.h>
-//#endif
 
-//#ifndef GL_REFLECTION_MAP
-//#define GL_REFLECTION_MAP 0x8512
-//#endif
-
-//#ifndef GL_TEXTURE_CUBE_MAP
-//#define GL_TEXTURE_CUBE_MAP 0x8513
-//#endif
 //数组长度的获取
 #define getArrayLen(array,len) {len = sizeof(array)/sizeof(array[0]);}
 template<class T>
@@ -46,12 +31,12 @@ int length(T& arr)
     return sizeof(arr)/sizeof(arr[0]);
 }
 
-//void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-//void processInput(GLFWwindow *window);
-//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-//void do_movement();
-//void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-//void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow *window);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void do_movement();
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -60,7 +45,7 @@ const unsigned int SCR_HEIGHT = 600;
 glm::vec3 objectColor(1.0f,0.5f,0.31f);
 //camera实例
 Camera camera(glm::vec3(0.0f,0.0f,3.0f));
-//bool firstMouse = true;
+bool firstMouse = true;
 bool keys[1024];
 //得到窗口的中心位置
 float lastX =  (float)SCR_WIDTH / 2.0;
@@ -75,57 +60,58 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     //sdl：initialize and configure
-    SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
+//    SDL_Init(SDL_INIT_EVERYTHING);
+//    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);
+//    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);
+//    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
 
-    SDL_Window *sdlWindow=nullptr;
-    SDL_GLContext gl_Context;
-    sdlWindow=SDL_CreateWindow("LernOpenGL",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,SCR_WIDTH,SCR_HEIGHT,SDL_WINDOW_OPENGL);
-    if(sdlWindow == nullptr)
+//    SDL_Window *sdlWindow=nullptr;
+//    SDL_GLContext gl_Context;
+//    sdlWindow=SDL_CreateWindow("LernOpenGL",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,SCR_WIDTH,SCR_HEIGHT,SDL_WINDOW_OPENGL);
+//    if(sdlWindow == nullptr)
+//    {
+//        std::cout<<SDL_GetError()<<std::endl;
+//        return -1;
+//    }else{
+//        gl_Context=SDL_GL_CreateContext(sdlWindow);
+//        gladLoadGL();
+//    }
+//    SDL_GL_SetSwapInterval(1);
+
+     //glfw: initialize and configure
+     //------------------------------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL)
     {
-        std::cout<<SDL_GetError()<<std::endl;
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
         return -1;
-    }else{
-        gl_Context=SDL_GL_CreateContext(sdlWindow);
-        gladLoadGL();
     }
-    SDL_GL_SetSwapInterval(1);
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // glfw: initialize and configure
-    // ------------------------------
-//    glfwInit();
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwSetKeyCallback(window,key_callback);        //设置键盘回调函数
+    glfwSetCursorPosCallback(window,mouse_callback);    //设置鼠标回调函数
+    glfwSetScrollCallback(window,scroll_callback);  //设置滚动回调函数
+    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);  //捕捉窗口鼠标
 
-//#ifdef __APPLE__
-//    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-//#endif
-
-//    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-//    if (window == NULL)
-//    {
-//        std::cout << "Failed to create GLFW window" << std::endl;
-//        glfwTerminate();
-//        return -1;
-//    }
-//    glfwMakeContextCurrent(window);
-//    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-//    glfwSetKeyCallback(window,key_callback);        //设置键盘回调函数
-//    glfwSetCursorPosCallback(window,mouse_callback);    //设置鼠标回调函数
-//    glfwSetScrollCallback(window,scroll_callback);  //设置滚动回调函数
-//    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);  //捕捉窗口鼠标
-
-//    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-//    {
-//        std::cout << "Failed to initialize GLAD" << std::endl;
-//        return -1;
-//    }
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
     glEnable(GL_DEPTH_TEST);        //打开opengl的深度测试
+    glDepthFunc(GL_LESS);       //在片段深度值 小于缓冲区的深度时通过测试
     //加载模型
     Model objModel;
     if(!objModel.loadModel("resources/objects/nanosuit/nanosuit.obj"))
@@ -227,31 +213,29 @@ int main(int argc, char *argv[])
     ourShader.setInt("material.diffuse",0);
     ourShader.setInt("material.specular",1);
 
-    SDLProcessEvent sdlEvent(sdlWindow);
-    sdlEvent.Init(&camera);
+    //SDLProcessEvent sdlEvent(sdlWindow);
+    //sdlEvent.Init(&camera);
     // render loop
     // -----------
-    SDL_Event e;
-    while(!sdlEvent.sdlEventloop(&e)){
+    //SDL_Event e;
+    //while(!sdlEvent.sdlEventloop(&e)){
 
-//    while(SDL_PollEvent(&e))
-//    //while (!glfwWindowShouldClose(window))
-//    {
-//        if(e.type == SDL_QUIT)
-//            done=true;
+//  while(SDL_PollEvent(&e))
+    while (!glfwWindowShouldClose(window))
+    {
+
         // 时间差，用于控制不同计算机的延迟
         // --------------------
-//        float currentFrame = glfwGetTime();     //运行秒数
-//        deltaTime = currentFrame - lastFrame;   //时间差，当前帧减去上一帧的时间
-//        lastFrame = currentFrame;
+        float currentFrame = glfwGetTime();     //运行秒数
+        deltaTime = currentFrame - lastFrame;   //时间差，当前帧减去上一帧的时间
+        lastFrame = currentFrame;
 
         // input
         // -----
-        //processInput(window);
-        //do_movement();
+        processInput(window);
+        do_movement();
         // render
         // ------
-        //sdlEvent.HandleKeyPressEvent(&camera);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //清除颜色和深度缓冲区
 
@@ -377,9 +361,9 @@ int main(int argc, char *argv[])
         }
         glBindVertexArray(0);
 
-        SDL_GL_SwapWindow(sdlWindow);
-        //glfwSwapBuffers(window);
-        //glfwPollEvents();   //检测并调用事件
+        //SDL_GL_SwapWindow(sdlWindow);
+        glfwSwapBuffers(window);
+        glfwPollEvents();   //检测并调用事件
     }
 //}
     glDeleteVertexArrays(1, &VAO);
@@ -388,14 +372,14 @@ int main(int argc, char *argv[])
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
-    //glfwTerminate();
+    glfwTerminate();
     //SDL
-    SDL_GL_DeleteContext(gl_Context);
-    SDL_DestroyWindow(sdlWindow);
-    SDL_Quit();
+//    SDL_GL_DeleteContext(gl_Context);
+//    SDL_DestroyWindow(sdlWindow);
+//    SDL_Quit();
     return 0;
 }
-/*
+
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -467,4 +451,3 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
-*/

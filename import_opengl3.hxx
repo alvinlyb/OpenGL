@@ -17,8 +17,6 @@
 #include <GLFW/glf3w.h>
 #elif defined(IMPORT_OPENGL_LOADER_GLEW)
 #include <gl/glew.h>
-#elif defined(IMPORT_OPENGL_LOADER_GLFW)
-#include <GLFW/glfw3.h>
 #elif defined(IMPORT_OPENGL_LOADER_GLAD)
 #include <glad/glad.h>
 #else
@@ -27,6 +25,9 @@
 
 #if defined(IMPORT_LOADER_SDL)
 #include <SDL.h>
+#include <SDL_opengl.h>
+#elif defined(IMPORT_LOADER_GLFW)
+#include <GLFW/glfw3.h>
 #endif
 
 //Initialize opengl loader

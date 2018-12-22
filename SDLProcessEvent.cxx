@@ -24,9 +24,15 @@ void SDLProcessEvent::Init(Camera *cam)
 bool SDLProcessEvent::sdlEventloop(SDL_Event *event)
 {
     float cmaeraSpeed=2.5;
-    while(SDL_PollEvent(event))
+    bool quit=false;
+    while(SDL_PollEvent(event)!=0)
     {
         switch (event->type) {
+        case SDL_QUIT:
+        {
+            quit=true;
+            break;
+        }
         case SDL_MOUSEBUTTONDOWN:
         {
             switch (event->button.button) {
@@ -50,22 +56,21 @@ bool SDLProcessEvent::sdlEventloop(SDL_Event *event)
             }
             break;
         }
-        case SDL_MOUSEWHEEL:
+        case SDL_MOUSEMOTION:
         {
-
-            if(event->wheel.x>0)
+            if(event->motion.x>0)
             {
-                HandleMousePressEvent(event->wheel.x,event->wheel.y);
-            }else if(event->wheel.x<0)
+                HandleMousePressEvent(event->motion.x,event->motion.y);
+            }else if(event->motion.x<0)
             {
-                HandleMousePressEvent(event->wheel.x,event->wheel.y);
+                HandleMousePressEvent(event->motion.x,event->motion.y);
             }
-            if(event->wheel.y>0)
+            if(event->motion.y>0)
             {
-                HandleMousePressEvent(event->wheel.x,event->wheel.y);
-            }else if(event->wheel.y<0)
+                HandleMousePressEvent(event->motion.x,event->motion.y);
+            }else if(event->motion.y<0)
             {
-                HandleMousePressEvent(event->wheel.x,event->wheel.y);
+                HandleMousePressEvent(event->motion.x,event->motion.y);
             }
             break;
         }
@@ -74,37 +79,34 @@ bool SDLProcessEvent::sdlEventloop(SDL_Event *event)
             switch (event->key.keysym.sym) {
             case SDLK_UP:
             {
-                qDebug()<<"keydown w or up";
                 //camera.ProcessKeyboard(FORWARD,deltaTime);
-                camera->ProcessKeyboard(FORWARD,0.010);
+                camera->ProcessKeyboard(FORWARD,0.10);
                 break;
             }
             case SDLK_DOWN:
             {
-                qDebug()<<"keydown w or down";
                 //camera.ProcessKeyboard(BACKWARD,deltaTime);
-                camera->ProcessKeyboard(BACKWARD,0.010);
+                camera->ProcessKeyboard(BACKWARD,0.10);
                 break;
             }
             case SDLK_LEFT:
             {
-                qDebug()<<"keydown w or left";
                 //camera.ProcessKeyboard(LEFT,deltaTime);
-                camera->ProcessKeyboard(LEFT,0.010);
+                camera->ProcessKeyboard(LEFT,0.10);
                 break;
             }
             case SDLK_RIGHT:
             {
-                qDebug()<<"keydown w or right";
                 //camera.ProcessKeyboard(RIGHT,deltaTime);
-                camera->ProcessKeyboard(RIGHT,0.01);
+                camera->ProcessKeyboard(RIGHT,0.1);
                 break;
             }
             case SDLK_ESCAPE:
             {
                 qDebug()<<"keydown w or end";
                 //camera.ProcessKeyboard(RIGHT,deltaTime);
-                return true;
+                quit=true;
+                break;
             }
             case SDLK_w:
             {
@@ -130,16 +132,11 @@ bool SDLProcessEvent::sdlEventloop(SDL_Event *event)
                 break;
             }
         }
-        case SDL_QUIT:
-        {
-            return true;
-            break;
-        }
         default:
             break;
         }
     }
-    return false;
+    return quit;
 }
 /*
 void SDLProcessEvent::HandleKeyPressEvent()
