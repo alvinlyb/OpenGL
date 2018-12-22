@@ -1,9 +1,5 @@
-﻿#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+﻿//#include <GLFW/glfw3.h>
+//#include <SDL.h>
 
 #include <iostream>
 #include <QApplication>
@@ -13,10 +9,15 @@
 #include "shader.hxx"
 #include "camera.hxx"
 #include "model.hxx"
+#include "SDLProcessEvent.hxx"
 #include "testdata.hxx"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#define IMPORT_OPENGL_LOADER_GLAD
+#define IMPORT_LOADER_SDL
+#include "import_opengl3.hxx"
+
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 //#include <common/common.hpp>
 //#include <SOIL2/SOIL2.h>
 //#pragma comment(lib, "D:\\cxxlib\\soil2\\lib\\soil2d.lib")
@@ -45,12 +46,12 @@ int length(T& arr)
     return sizeof(arr)/sizeof(arr[0]);
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void do_movement();
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+//void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+//void processInput(GLFWwindow *window);
+//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+//void do_movement();
+//void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+//void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -59,7 +60,7 @@ const unsigned int SCR_HEIGHT = 600;
 glm::vec3 objectColor(1.0f,0.5f,0.31f);
 //camera实例
 Camera camera(glm::vec3(0.0f,0.0f,3.0f));
-bool firstMouse = true;
+//bool firstMouse = true;
 bool keys[1024];
 //得到窗口的中心位置
 float lastX =  (float)SCR_WIDTH / 2.0;
@@ -73,51 +74,70 @@ float lastFrame = 0.0f;
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+    //sdl：initialize and configure
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
+
+    SDL_Window *sdlWindow=nullptr;
+    SDL_GLContext gl_Context;
+    sdlWindow=SDL_CreateWindow("LernOpenGL",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,SCR_WIDTH,SCR_HEIGHT,SDL_WINDOW_OPENGL);
+    if(sdlWindow == nullptr)
+    {
+        std::cout<<SDL_GetError()<<std::endl;
+        return -1;
+    }else{
+        gl_Context=SDL_GL_CreateContext(sdlWindow);
+        gladLoadGL();
+    }
+    SDL_GL_SetSwapInterval(1);
+
     // glfw: initialize and configure
     // ------------------------------
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//    glfwInit();
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+//#ifdef __APPLE__
+//    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+//#endif
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+//    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+//    if (window == NULL)
+//    {
+//        std::cout << "Failed to create GLFW window" << std::endl;
+//        glfwTerminate();
+//        return -1;
+//    }
+//    glfwMakeContextCurrent(window);
+//    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    glfwSetKeyCallback(window,key_callback);        //设置键盘回调函数
-    glfwSetCursorPosCallback(window,mouse_callback);    //设置鼠标回调函数
-    glfwSetScrollCallback(window,scroll_callback);  //设置滚动回调函数
-    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);  //捕捉窗口鼠标
+//    glfwSetKeyCallback(window,key_callback);        //设置键盘回调函数
+//    glfwSetCursorPosCallback(window,mouse_callback);    //设置鼠标回调函数
+//    glfwSetScrollCallback(window,scroll_callback);  //设置滚动回调函数
+//    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);  //捕捉窗口鼠标
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
+//    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+//    {
+//        std::cout << "Failed to initialize GLAD" << std::endl;
+//        return -1;
+//    }
 
     glEnable(GL_DEPTH_TEST);        //打开opengl的深度测试
     //加载模型
     Model objModel;
     if(!objModel.loadModel("resources/objects/nanosuit/nanosuit.obj"))
     {
-        glfwTerminate();
+        //glfwTerminate();
         system("pause");
         return -1;
     }
     //shader的实例化glsl
-    Shader ourShader("F:\\script\\QtProject\\OpenGLTest001\\vertex.vs", "F:\\script\\QtProject\\OpenGLTest001\\fragment.fs");
+    Shader ourShader("../vertex.vert", "../fragment.frag");
     //灯光
-    Shader lightShader("F:\\script\\QtProject\\OpenGLTest001\\LightVertex.vs", "F:\\script\\QtProject\\OpenGLTest001\\light.fs");
+    Shader lightShader("../LightVertex.vert", "../light.frag");
     // ------------------------------------------------------------------
 
     GLuint VBO, VAO,EBO,lightVAO;
@@ -172,7 +192,7 @@ int main(int argc, char *argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     //加载纹理图片
-    image=stbi_load("F:/script/QtProject/OpenGLTest001/container2.jpg",&width,&height,&channels,0);
+    image=stbi_load("../container2.jpg",&width,&height,&channels,0);
     //image=SOIL_load_image("F:/script/QtProject/OpenGLTest001/container2.png",&width,&height,0,SOIL_LOAD_RGBA);
     if(image)
     {
@@ -190,7 +210,7 @@ int main(int argc, char *argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    image=stbi_load("F:/script/QtProject/OpenGLTest001/container2_specular.jpg",&width,&height,&channels,0);
+    image=stbi_load("../container2_specular.jpg",&width,&height,&channels,0);
     //image=SOIL_load_image("F:/script/QtProject/OpenGLTest001/container2_specular.png",&width,&height,0,SOIL_LOAD_RGBA);
     if(image)
     {
@@ -207,22 +227,31 @@ int main(int argc, char *argv[])
     ourShader.setInt("material.diffuse",0);
     ourShader.setInt("material.specular",1);
 
+    SDLProcessEvent sdlEvent(sdlWindow);
+    sdlEvent.Init(&camera);
     // render loop
     // -----------
-    while (!glfwWindowShouldClose(window))
-    {
+    SDL_Event e;
+    while(!sdlEvent.sdlEventloop(&e)){
+
+//    while(SDL_PollEvent(&e))
+//    //while (!glfwWindowShouldClose(window))
+//    {
+//        if(e.type == SDL_QUIT)
+//            done=true;
         // 时间差，用于控制不同计算机的延迟
         // --------------------
-        float currentFrame = glfwGetTime();     //运行秒数
-        deltaTime = currentFrame - lastFrame;   //时间差，当前帧减去上一帧的时间
-        lastFrame = currentFrame;
+//        float currentFrame = glfwGetTime();     //运行秒数
+//        deltaTime = currentFrame - lastFrame;   //时间差，当前帧减去上一帧的时间
+//        lastFrame = currentFrame;
 
         // input
         // -----
-        processInput(window);
-        do_movement();
+        //processInput(window);
+        //do_movement();
         // render
         // ------
+        //sdlEvent.HandleKeyPressEvent(&camera);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //清除颜色和深度缓冲区
 
@@ -348,20 +377,25 @@ int main(int argc, char *argv[])
         }
         glBindVertexArray(0);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();   //检测并调用事件
+        SDL_GL_SwapWindow(sdlWindow);
+        //glfwSwapBuffers(window);
+        //glfwPollEvents();   //检测并调用事件
     }
-
+//}
     glDeleteVertexArrays(1, &VAO);
     glDeleteVertexArrays(1,&lightVAO);
     glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
-    glfwTerminate();
+    //glfwTerminate();
+    //SDL
+    SDL_GL_DeleteContext(gl_Context);
+    SDL_DestroyWindow(sdlWindow);
+    SDL_Quit();
     return 0;
 }
-
+/*
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -433,3 +467,4 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
+*/
